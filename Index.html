@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Tic Tac Toe - Versi Lengkap</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Poppins&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      text-align: center;
+      background-image: url('b0cde31b-3e4c-4a72-afb2-48ae124f2246.jpeg');
+      background-size: cover;
+      margin: 10px;
+      padding: 20px;
+    }
+
+    h1 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 24px;
+      color: #eb1313;
+    }
+
+    h2 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 16px;
+      color: #eb1313;
+    }
+
+    label, input, button {
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+    }
+
+    .board {
+      display: none;
+      grid-template-columns: repeat(3, 100px);
+      grid-gap: 5px;
+      justify-content: center;
+      margin: 20px auto;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      background-color: transparent !important;
+      border: 2px solid rgba(255,255,255,0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .cell img {
+      width: 80%;
+      height: 80%;
+      border-radius: 50%;
+    }
+
+    #status, #scoreboard {
+      font-size: 20px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    #reset, #playAgain {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+      display: none;
+    }
+
+    #character-selection {
+      background-color: transparent;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      max-width: 350px;
+      margin: auto;
+    }
+
+    input[type="file"], input[type="text"] {
+      margin-top: 10px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>TIC TAC TOE</h1>
+
+  <div id="character-selection">
+    <h2>MASUKAN NAMA & KARAKTER </h2>
+    <div>
+      <label>Nama Pemain X:</label><br>
+      <input type="text" id="nameX" placeholder="Contoh: Budi"><br>
+      <input type="file" accept="image/*" id="charX">
+    </div>
+    <br>
+    <div>
+      <label>Nama Pemain O:</label><br>
+      <input type="text" id="nameO" placeholder="Contoh: Sari"><br>
+      <input type="file" accept="image/*" id="charO">
+    </div>
+    <br>
+    <button id="startGame" disabled>Mulai Game</button>
+  </div>
+
+  <div id="scoreboard">Skor: <span id="scoreX">0</span> - <span id="scoreO">0</span></div>
+  <div class="board" id="board"></div>
+  <div id="status">Giliran: X</div>
+  <button id="playAgain">Main Lagi</button>
+  <button id="reset">Reset Total</button>
+
+  <!-- Suara -->
+  <audio id="bgMusic" src="Backsound.mp3" loop></audio>
+  <audio id="clickSound" src="sword-schwing-40520.mp3"></audio>
+  <audio id="winSound" src="sword-schwing-40520.mp3"></audio>
+
+  <script>
+    const board = document.getElementById('board');
+    const status = document.getElementById('status');
+    const reset = document.getElementById('reset');
+    const playAgain = document.getElementById('playAgain');
+    const startBtn = document.getElementById('startGame');
+    const scoreboard = document.getElementById('scoreboard');
+
+    let cells = [];
+    let currentPlayer = 'X';
+    let gameOver = false;
+    let nameX = '', nameO = '';
+    let charXSrc = '', charOSrc = '';
+    let scoreX = 0, scoreO = 0;
+
+    const clickSound = document.getElementById('clickSound');
+    const winSound = document.getElementById('winSound');
+    const bgMusic = document.getElementById('bgMusic');
+
+    let musicStarted = false;
+    function startMusicIfNotYet() {
+      if (!musicStarted) {
+        bgMusic.play().then(() => {
+          musicStarted = true;
+        }).catch((err) => {
+          console.log("Musik tidak bisa diputar:", err);
+        });
+      }
+    }
+
+    function checkReady() {
+      const nameXInput = document.getElementById('nameX').value.trim();
+      const nameOInput = document.getElementById('nameO').value.trim();
+      if (nameXInput && nameOInput && charXSrc && charOSrc) {
+        startBtn.disabled = false;
+      }
+    }
+
+    // Deteksi interaksi awal pengguna → nyalakan musik
+    document.getElementById('nameX').addEventListener('input', () => {
+      startMusicIfNotYet();
+      checkReady();
+    });
+
+    document.getElementById('nameO').addEventListener('input', () => {
+      startMusicIfNotYet();
+      checkReady();
+    });
+
+    document.getElementById('charX').addEventListener('change', (e) => {
+      startMusicIfNotYet();
+      const file = e.target.files[0];
+      if (file) charXSrc = URL.createObjectURL(file);
+      checkReady();
+    });
+
+    document.getElementById('charO').addEventListener('change', (e) => {
+      startMusicIfNotYet();
+      const file = e.target.files[0];
+      if (file) charOSrc = URL.createObjectURL(file);
+      checkReady();
+    });
+
+    startBtn.addEventListener('click', () => {
+      startMusicIfNotYet();
+      nameX = document.getElementById('nameX').value.trim();
+      nameO = document.getElementById('nameO').value.trim();
+      document.getElementById('character-selection').style.display = 'none';
+      board.style.display = 'grid';
+      status.style.display = 'block';
+      reset.style.display = 'inline-block';
+      scoreboard.style.display = 'block';
+      createBoard();
+    });
+
+    function createBoard() {
+      board.innerHTML = '';
+      cells = [];
+      gameOver = false;
+      currentPlayer = 'X';
+      status.textContent = `Giliran: ${currentPlayer} (${currentPlayer === 'X' ? nameX : nameO})`;
+
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.addEventListener('click', () => handleClick(i));
+        board.appendChild(cell);
+        cells.push(cell);
+      }
+    }
+
+    function handleClick(index) {
+      if (cells[index].hasChildNodes() || gameOver) return;
+
+      const img = document.createElement('img');
+      img.src = currentPlayer === 'X' ? charXSrc : charOSrc;
+      cells[index].appendChild(img);
+      clickSound.play();
+
+      if (checkWinner()) {
+        status.textContent = `Pemenang: ${currentPlayer} (${currentPlayer === 'X' ? nameX : nameO})`;
+        gameOver = true;
+        winSound.play();
+
+        if (currentPlayer === 'X') {
+          scoreX++;
+          document.getElementById('scoreX').textContent = scoreX;
+        } else {
+          scoreO++;
+          document.getElementById('scoreO').textContent = scoreO;
+        }
+
+        playAgain.style.display = 'inline-block';
+      } else if (cells.every(cell => cell.hasChildNodes())) {
+        status.textContent = 'Seri!';
+        gameOver = true;
+        playAgain.style.display = 'inline-block';
+      } else {
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        status.textContent = `Giliran: ${currentPlayer} (${currentPlayer === 'X' ? nameX : nameO})`;
+      }
+    }
+
+    function checkWinner() {
+      const winPatterns = [
+        [0,1,2], [3,4,5], [6,7,8],
+        [0,3,6], [1,4,7], [2,5,8],
+        [0,4,8], [2,4,6]
+      ];
+
+      return winPatterns.some(pattern => {
+        const [a,b,c] = pattern;
+        const aImg = cells[a].querySelector('img');
+        const bImg = cells[b].querySelector('img');
+        const cImg = cells[c].querySelector('img');
+
+        return aImg && bImg && cImg &&
+               aImg.src === bImg.src &&
+               bImg.src === cImg.src;
+      });
+    }
+
+    playAgain.addEventListener('click', () => {
+      createBoard();
+      playAgain.style.display = 'none';
+    });
+
+    reset.addEventListener('click', () => {
+      location.reload();
+    });
+  </script>
+
+</body>
+</html>
